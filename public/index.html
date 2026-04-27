@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevOps Pipeline Live Monitor</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/dashboard.js" defer></script>
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div>
+          <h1 class="app-title">DevOps Pipeline Live Monitor</h1>
+          <p class="app-subtitle">Live status for Jenkins, Docker, Kubernetes, and Nagios</p>
+        </div>
+        <div class="live-indicator">
+          <span class="pulse"></span>
+          <span>Updates every 5 seconds</span>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card system-bar" style="--delay: 0.05s;">
+          <div class="card-header">
+            <h2 class="card-title">System Health</h2>
+            <span class="badge neutral" id="system-updated">Last updated: --</span>
+          </div>
+          <div class="system-grid">
+            <div class="metric">
+              <div class="metric-label">CPU Usage</div>
+              <div class="metric-value" id="system-cpu">32%</div>
+              <div class="metric-sub">1 min average</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">RAM</div>
+              <div class="metric-value" id="system-ram">6.1 / 16 GB</div>
+              <div class="metric-sub">In use</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Disk</div>
+              <div class="metric-value" id="system-disk">48 / 120 GB</div>
+              <div class="metric-sub">Total used</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Uptime</div>
+              <div class="metric-value" id="system-uptime">12d 4h</div>
+              <div class="metric-sub">Since last reboot</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" style="--delay: 0.1s;">
+          <div class="card-header">
+            <h2 class="card-title">Jenkins Build Status</h2>
+            <span class="badge ok" id="jenkins-badge">Online</span>
+          </div>
+          <ul class="data-list" id="jenkins-list">
+            <li class="data-item success">
+              <div>
+                <strong>#214</strong> Deploy pipeline
+                <br />
+                <small>main branch</small>
+              </div>
+              <span class="pill ok">Success</span>
+              <small>2026-04-27 09:42</small>
+            </li>
+            <li class="data-item failed">
+              <div>
+                <strong>#213</strong> Integration tests
+                <br />
+                <small>release-2026.04</small>
+              </div>
+              <span class="pill danger">Failed</span>
+              <small>2026-04-27 08:55</small>
+            </li>
+            <li class="data-item success">
+              <div>
+                <strong>#212</strong> Build artifacts
+                <br />
+                <small>main branch</small>
+              </div>
+              <span class="pill ok">Success</span>
+              <small>2026-04-27 08:20</small>
+            </li>
+            <li class="data-item running">
+              <div>
+                <strong>#211</strong> Security scan
+                <br />
+                <small>hotfix-auth</small>
+              </div>
+              <span class="pill warn">In progress</span>
+              <small>2026-04-27 07:48</small>
+            </li>
+            <li class="data-item success">
+              <div>
+                <strong>#210</strong> Unit tests
+                <br />
+                <small>main branch</small>
+              </div>
+              <span class="pill ok">Success</span>
+              <small>2026-04-27 07:20</small>
+            </li>
+          </ul>
+        </section>
+
+        <section class="card" style="--delay: 0.15s;">
+          <div class="card-header">
+            <h2 class="card-title">Docker Containers</h2>
+            <span class="badge warn" id="docker-badge">Attention</span>
+          </div>
+          <table class="table" id="docker-table">
+            <thead>
+              <tr>
+                <th>Container</th>
+                <th>Status</th>
+                <th>CPU</th>
+                <th>Memory</th>
+              </tr>
+            </thead>
+            <tbody id="docker-table-body">
+              <tr>
+                <td>api-gateway</td>
+                <td><span class="pill ok">Running</span></td>
+                <td>3.1%</td>
+                <td>210 MB</td>
+              </tr>
+              <tr>
+                <td>worker</td>
+                <td><span class="pill warn">Restarting</span></td>
+                <td>9.8%</td>
+                <td>640 MB</td>
+              </tr>
+              <tr>
+                <td>postgres</td>
+                <td><span class="pill ok">Running</span></td>
+                <td>1.2%</td>
+                <td>1.4 GB</td>
+              </tr>
+              <tr>
+                <td>redis-cache</td>
+                <td><span class="pill danger">Unhealthy</span></td>
+                <td>0.4%</td>
+                <td>120 MB</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="card" style="--delay: 0.2s;">
+          <div class="card-header">
+            <h2 class="card-title">Kubernetes Pod Status</h2>
+            <span class="badge ok" id="k8s-badge">Stable</span>
+          </div>
+          <table class="table" id="k8s-table">
+            <thead>
+              <tr>
+                <th>Pod</th>
+                <th>Status</th>
+                <th>Age</th>
+              </tr>
+            </thead>
+            <tbody id="k8s-table-body">
+              <tr>
+                <td>api-7b64c</td>
+                <td><span class="pill ok">Running</span></td>
+                <td>2h 12m</td>
+              </tr>
+              <tr>
+                <td>worker-5f68b</td>
+                <td><span class="pill warn">Pending</span></td>
+                <td>14m</td>
+              </tr>
+              <tr>
+                <td>prometheus-0</td>
+                <td><span class="pill ok">Running</span></td>
+                <td>1d 4h</td>
+              </tr>
+              <tr>
+                <td>ingress-nginx-controller</td>
+                <td><span class="pill danger">CrashLoopBackOff</span></td>
+                <td>9m</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="card" style="--delay: 0.25s;">
+          <div class="card-header">
+            <h2 class="card-title">Nagios Alerts</h2>
+            <span class="badge warn" id="nagios-badge">5 recent alerts</span>
+          </div>
+          <div class="data-list" id="nagios-list">
+            <div class="alert-item critical">
+              <div><strong>web-01</strong></div>
+              <div>HTTP Check</div>
+              <span class="pill danger">Critical</span>
+              <small>2026-04-27 09:38</small>
+            </div>
+            <div class="alert-item warning">
+              <div><strong>db-02</strong></div>
+              <div>Disk Usage</div>
+              <span class="pill warn">Warning</span>
+              <small>2026-04-27 09:10</small>
+            </div>
+            <div class="alert-item ok">
+              <div><strong>api-03</strong></div>
+              <div>Latency</div>
+              <span class="pill ok">Recovered</span>
+              <small>2026-04-27 08:52</small>
+            </div>
+            <div class="alert-item warning">
+              <div><strong>cache-01</strong></div>
+              <div>Memory Usage</div>
+              <span class="pill warn">Warning</span>
+              <small>2026-04-27 08:40</small>
+            </div>
+            <div class="alert-item critical">
+              <div><strong>ingress-01</strong></div>
+              <div>SSL Expiry</div>
+              <span class="pill danger">Critical</span>
+              <small>2026-04-27 08:12</small>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <p class="footer-note">Static layout preview. Live data and WebSocket updates will be wired after your confirmation.</p>
+    </div>
+  </body>
+</html>
