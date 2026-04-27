@@ -1,6 +1,10 @@
 pipeline {
   agent any
 
+  tools {
+    nodejs 'node20'
+  }
+
   environment {
     DOCKER_HUB_USER = "${env.DOCKER_HUB_USER}"
     IMAGE_NAME = "${env.IMAGE_NAME}"
