@@ -1,10 +1,29 @@
 const express = require('express');
 const http = require('http');
+const axios = require('axios');
 
 const router = express.Router();
 
 const DOCKER_SOCKET = process.env.DOCKER_SOCKET || '/var/run/docker.sock';
+const DOCKER_API_URL = process.env.DOCKER_API_URL
+  ? process.env.DOCKER_API_URL.replace(/\/$/, '')
+  : '';
+const CONTAINER_WINDOW_MINUTES = Number(process.env.DOCKER_CONTAINER_WINDOW_MINUTES || 60);
 const REQUEST_TIMEOUT_MS = 3000;
+
+function getContainerWindowMs() {
+  if (!Number.isFinite(CONTAINER_WINDOW_MINUTES) || CONTAINER_WINDOW_MINUTES <= 0) {
+    return 60 * 60 * 1000;
+  }
+  return CONTAINER_WINDOW_MINUTES * 60 * 1000;
+}
+
+function shouldIncludeContainer(container, cutoff) {
+  if (container.State === 'running') return true;
+  const createdAt = Number(container.Created || 0) * 1000;
+  if (!Number.isFinite(createdAt) || createdAt <= 0) return false;
+  return createdAt >= cutoff;
+}
 
 function dockerRequest(path) {
   return new Promise((resolve, reject) => {
@@ -41,7 +60,17 @@ function dockerRequest(path) {
   });
 }
 
+async function dockerHttpGet(path) {
+  const response = await axios.get(`${DOCKER_API_URL}${path}`, { timeout: REQUEST_TIMEOUT_MS });
+  return response.data;
+}
+
 async function fetchContainers() {
+  if (DOCKER_API_URL) {
+    const containers = await dockerHttpGet('/containers/json?all=1');
+    return Array.isArray(containers) ? containers : [];
+  }
+
   const payload = await dockerRequest('/containers/json?all=1');
   const containers = JSON.parse(payload);
   return Array.isArray(containers) ? containers : [];
@@ -49,6 +78,10 @@ async function fetchContainers() {
 
 async function fetchContainerStats(containerId) {
   try {
+    if (DOCKER_API_URL) {
+      return await dockerHttpGet(`/containers/${containerId}/stats?stream=false`);
+    }
+
     const payload = await dockerRequest(`/containers/${containerId}/stats?stream=false`);
     return JSON.parse(payload);
   } catch (error) {
@@ -100,14 +133,18 @@ function getHealth(status) {
 async function getDockerStatus() {
   try {
     const containers = await fetchContainers();
+    const cutoff = Date.now() - getContainerWindowMs();
+    const visibleContainers = containers.filter((container) =>
+      shouldIncludeContainer(container, cutoff)
+    );
     const statsList = await Promise.all(
-      containers.map((container) => {
+      visibleContainers.map((container) => {
         if (container.State !== 'running') return Promise.resolve(null);
         return fetchContainerStats(container.Id);
       })
     );
 
-    const items = containers.map((container, index) => {
+    const items = visibleContainers.map((container, index) => {
       const stats = statsList[index];
       return {
         id: container.Id,

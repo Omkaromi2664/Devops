@@ -24,9 +24,23 @@ docker run --rm -p 3000:3000 <DOCKER_HUB_USER>/<IMAGE_NAME>:latest
 ## Kubernetes
 
 ```bash
+kubectl apply -f k8s/rbac.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
 kubectl apply -f k8s/
 kubectl get pods
 ```
+
+Update [k8s/configmap.yaml](k8s/configmap.yaml) with your Jenkins, Nagios, and Docker API URLs.
+Update [k8s/secret.yaml](k8s/secret.yaml) with Jenkins credentials.
+
+For managed Kubernetes, the service is exposed as a LoadBalancer. Use:
+
+```bash
+kubectl get svc devops-pipeline-service
+```
+
+For minikube, run `minikube tunnel` to get an external IP for the LoadBalancer.
 
 ## Jenkins
 

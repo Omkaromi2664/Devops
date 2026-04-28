@@ -1,9 +1,15 @@
 const express = require('express');
 const axios = require('axios');
+const https = require('https');
+const fs = require('fs');
 
 const router = express.Router();
 
-const K8S_PROXY_URL = process.env.K8S_PROXY_URL || 'http://localhost:8001';
+const K8S_PROXY_URL = process.env.K8S_PROXY_URL || '';
+const K8S_API_URL = process.env.K8S_API_URL || 'https://kubernetes.default.svc';
+const K8S_IN_CLUSTER = process.env.K8S_IN_CLUSTER === 'true' || process.env.K8S_IN_CLUSTER === '1';
+const K8S_NAMESPACE = process.env.K8S_NAMESPACE || 'default';
+const SERVICE_ACCOUNT_DIR = '/var/run/secrets/kubernetes.io/serviceaccount';
 
 function formatAge(creationTimestamp) {
   if (!creationTimestamp) return '--';
@@ -19,11 +25,43 @@ function formatAge(creationTimestamp) {
   return `${minutes}m`;
 }
 
+function getInClusterConfig() {
+  const tokenPath = `${SERVICE_ACCOUNT_DIR}/token`;
+  const caPath = `${SERVICE_ACCOUNT_DIR}/ca.crt`;
+  const token = fs.readFileSync(tokenPath, 'utf8').trim();
+  const ca = fs.readFileSync(caPath);
+
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    httpsAgent: new https.Agent({ ca }),
+    timeout: 3000
+  };
+}
+
+async function fetchPods() {
+  const namespace = K8S_NAMESPACE || 'default';
+
+  if (K8S_IN_CLUSTER) {
+    const url = `${K8S_API_URL}/api/v1/namespaces/${namespace}/pods`;
+    const response = await axios.get(url, getInClusterConfig());
+    return response.data;
+  }
+
+  if (K8S_PROXY_URL) {
+    const url = `${K8S_PROXY_URL}/api/v1/namespaces/${namespace}/pods`;
+    const response = await axios.get(url, { timeout: 3000 });
+    return response.data;
+  }
+
+  throw new Error('K8s offline');
+}
+
 async function getKubernetesStatus() {
   try {
-    const url = `${K8S_PROXY_URL}/api/v1/namespaces/default/pods`;
-    const response = await axios.get(url, { timeout: 3000 });
-    const items = Array.isArray(response.data.items) ? response.data.items : [];
+    const data = await fetchPods();
+    const items = Array.isArray(data.items) ? data.items : [];
 
     const pods = items.map((item) => {
       const name = item.metadata && item.metadata.name;

@@ -1,9 +1,29 @@
 const express = require('express');
 const fs = require('fs');
+const axios = require('axios');
 
 const router = express.Router();
 
 const STATUS_FILE = process.env.NAGIOS_STATUS_FILE || '/usr/local/nagios/var/status.dat';
+const STATUS_URL = process.env.NAGIOS_STATUS_URL || '';
+const ALERT_WINDOW_MINUTES = Number(process.env.NAGIOS_ALERT_WINDOW_MINUTES || 60);
+
+function getAlertWindowMs() {
+  if (!Number.isFinite(ALERT_WINDOW_MINUTES) || ALERT_WINDOW_MINUTES <= 0) {
+    return 60 * 60 * 1000;
+  }
+  return ALERT_WINDOW_MINUTES * 60 * 1000;
+}
+
+async function readStatusText() {
+  if (STATUS_URL) {
+    const response = await axios.get(STATUS_URL, { timeout: 3000 });
+    const data = response.data;
+    return typeof data === 'string' ? data : JSON.stringify(data);
+  }
+
+  return fs.promises.readFile(STATUS_FILE, 'utf8');
+}
 
 function parseServiceStatus(lines) {
   const services = [];
@@ -46,6 +66,8 @@ function mapSeverity(state) {
 }
 
 function buildAlerts(services) {
+  const windowMs = getAlertWindowMs();
+  const cutoff = Date.now() - windowMs;
   const alerts = services
     .map((service) => {
       const state = Number(service.current_state);
@@ -53,6 +75,8 @@ function buildAlerts(services) {
       if (severity === 'ok') return null;
 
       const timestamp = Number(service.last_state_change || service.last_check || 0) * 1000;
+      if (Number.isFinite(timestamp) && timestamp < cutoff) return null;
+
       return {
         host: service.host_name || 'host',
         service: service.service_description || 'service',
@@ -68,7 +92,7 @@ function buildAlerts(services) {
 
 async function getNagiosStatus() {
   try {
-    const content = await fs.promises.readFile(STATUS_FILE, 'utf8');
+    const content = await readStatusText();
     const lines = content.split(/\r?\n/);
     const services = parseServiceStatus(lines);
     const alerts = buildAlerts(services);

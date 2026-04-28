@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devops-pipeline-config
+  namespace: default
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  JENKINS_URL: "http://host.minikube.internal:8080"
+  K8S_IN_CLUSTER: "true"
+  K8S_NAMESPACE: "default"
+  NAGIOS_STATUS_URL: "http://host.minikube.internal:8081/status.dat"
+  DOCKER_API_URL: "http://host.minikube.internal:2375"
+  NAGIOS_ALERT_WINDOW_MINUTES: "60"
+  JENKINS_BUILD_WINDOW_MINUTES: "60"
+  DOCKER_CONTAINER_WINDOW_MINUTES: "60"
+  
