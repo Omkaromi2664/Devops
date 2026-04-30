@@ -30,18 +30,25 @@ async function runTest(testName, testFn) {
 }
 
 async function setupDriver() {
+  const { Options } = require('selenium-webdriver/chrome');
+  
+  const chromeOptions = new Options();
+  chromeOptions.addArguments(
+    '--headless=new',
+    '--no-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--window-size=1920,1080'
+  );
+  
+  const chromeBin = process.env.CHROME_BIN || process.env.CHROMEDRIVER_BIN;
+  if (chromeBin) {
+    chromeOptions.setChromeBinaryPath(chromeBin);
+  }
+  
   driver = await new Builder()
     .forBrowser('chrome')
-    .setChromeBinaryPath(process.env.CHROME_BIN || '/usr/bin/chromium-browser')
-    .setChromeOptions({
-      args: [
-        '--headless=new',
-        '--no-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--window-size=1920,1080'
-      ]
-    })
+    .setChromeOptions(chromeOptions)
     .build();
     
   await driver.manage().setTimeouts({ implicit: 5000 });

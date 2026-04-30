@@ -4,33 +4,38 @@ This project includes comprehensive automated testing with unit tests, integrati
 
 ## Test Types
 
-### Unit Tests
-Basic functionality tests for individual routes.
+### Unit Tests (CI/CD Safe)
+Basic functionality tests for individual routes. Safe to run in CI pipeline—no external dependencies.
 
 ```bash
-npm test
+npm test                    # Recommended
+npm run test:unit          # Explicit
 ```
 
-### Integration Tests  
-Tests that verify API endpoints return valid data and handle errors properly.
+### Integration Tests (Requires Running App)  
+Tests that verify API endpoints return valid data and handle errors properly. **Requires the app to be running.**
 
 ```bash
 npm run test:integration
 ```
 
-### Selenium E2E Tests
-Full UI and browser automation tests that verify the dashboard UI loads, updates, and integrates with all APIs.
+These tests will gracefully skip if the app isn't available at `http://localhost:3000`.
+
+### Selenium E2E Tests (Requires Browser & App)
+Full UI and browser automation tests that verify the dashboard UI loads, updates, and integrates with all APIs. **Requires Chrome/Chromium and the app to be running.**
 
 ```bash
 npm run test:selenium
 ```
 
-> **Note:** Selenium tests require Chrome/Chromium browser and ChromeDriver. They also require the app to be running.
+> **Note:** Selenium tests require Chrome/Chromium browser, ChromeDriver, and the application running at `http://localhost:3000`.
 
 ### Run All Tests
 ```bash
 npm run test:all
 ```
+
+Runs unit tests first, then integration and Selenium tests (requires app running).
 
 ## Test Coverage
 
@@ -39,9 +44,27 @@ View coverage report:
 npm run test:coverage
 ```
 
+## CI/CD Pipeline Test Execution
+
+The Jenkins pipeline runs **unit tests only**:
+1. ✓ Unit Tests - Runs automatically, no external dependencies
+2. ⏭️ Build Docker Image
+3. ⏭️ Push to Docker Hub
+4. ⏭️ Deploy to Kubernetes
+
+**Integration and Selenium tests** are NOT run in the CI pipeline because they require:
+- A running application instance
+- External services (Jenkins, Docker, Nagios, etc.)
+- Browser environment (Selenium)
+
+Instead, these tests should be run:
+- **Locally** during development: `npm run test:all`
+- **Post-deployment** via the test scheduler in the running app
+- **Manually** against the deployed dashboard
+
 ## Test Results on Dashboard
 
-All test results are automatically:
+After deployment, test results are automatically:
 - Saved to `.test-results/latest.json`
 - Displayed on the dashboard in the **Test Results** panel
 - Available via API at `/api/tests`
@@ -87,13 +110,22 @@ Response includes:
 
 ## Jenkins Integration
 
-The Jenkins pipeline includes test stages:
+The Jenkins pipeline includes:
 
-1. **Run Unit Tests** - Always runs
-2. **Run Integration Tests** - Always runs
-3. **Run Selenium Tests** - Runs for main branch or when `RUN_SELENIUM_TESTS=true`
+1. **Run Unit Tests** (via `npm run test:unit`) - Always runs, no external dependencies
+2. **Build Docker Image** - Builds container image
+3. **Push to Docker Hub** - Publishes image
+4. **Deploy to Kubernetes** - Updates running deployment
 
-Test results are archived and published as artifacts.
+**Post-deployment testing** happens automatically via the test scheduler in the running app:
+- Integration tests run every 5 minutes (configurable via `TEST_INTERVAL_MS`)
+- Results appear on the dashboard in the **Test Results** panel
+- Test artifacts are archived in Jenkins
+
+Test results are archived and can be viewed:
+- On the dashboard at `http://{app-url}/` (Test Results panel)
+- Via API at `http://{app-url}/api/tests`
+- In Jenkins artifacts (`.test-results/latest.json`)
 
 ## API Endpoints
 

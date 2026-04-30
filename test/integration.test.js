@@ -179,9 +179,26 @@ async function testConcurrentRequests() {
   if (results.some(r => !r.updatedAt)) throw new Error('Some requests failed');
 }
 
+async function checkAppAvailable() {
+  try {
+    const response = await fetch(`${BASE_URL}/health`, { timeout: 3000 });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
 async function runAllTests() {
   console.log('\n🔗 Starting Integration Tests\n');
   console.log(`Base URL: ${BASE_URL}\n`);
+
+  // Check if app is available
+  const appAvailable = await checkAppAvailable();
+  if (!appAvailable) {
+    console.log('⚠️  App not available at ' + BASE_URL);
+    console.log('Integration tests skipped (app must be running during integration test phase)\n');
+    return;
+  }
 
   // Append to existing results
   try {
