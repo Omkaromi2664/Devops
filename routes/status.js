@@ -3,7 +3,7 @@ const { getJenkinsStatus } = require('./jenkins');
 const { getDockerStatus } = require('./docker');
 const { getKubernetesStatus } = require('./kubernetes');
 const { getNagiosStatus } = require('./nagios');
-const { getResults: getTestResults } = require('../test/test-results-manager');
+const { getResults: getTestResults } = require('../util/results-manager');
 
 function getTestStatus() {
   try {

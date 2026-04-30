@@ -1,5 +1,5 @@
 const express = require('express');
-const { getResults } = require('../test/test-results-manager');
+const { getResults } = require('../util/results-manager');
 
 const router = express.Router();
 

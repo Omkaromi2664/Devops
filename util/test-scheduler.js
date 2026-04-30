@@ -1,6 +1,6 @@
 const { spawn } = require('child_process');
 const path = require('path');
-const { getResults } = require('../test/test-results-manager');
+const { getResults } = require('./results-manager');
 
 class TestScheduler {
   constructor(options = {}) {

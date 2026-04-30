@@ -1,4 +1,4 @@
-const { recordTest, getResults, clearResults } = require('./test-results-manager');
+const { recordTest, getResults, clearResults } = require('../util/results-manager');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const TEST_TIMEOUT = 10000;

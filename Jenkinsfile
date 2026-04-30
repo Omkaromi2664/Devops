@@ -60,7 +60,7 @@ pipeline {
           kubectl apply -f k8s/
           kubectl set image deployment/devops-pipeline-app \
             devops-pipeline-app=${DOCKER_HUB_USER}/${IMAGE_NAME}:${BUILD_NUMBER}
-          kubectl rollout status deployment/devops-pipeline-app --timeout=60s
+          kubectl rollout status deployment/devops-pipeline-app --timeout=120s
         '''
       }
     }

@@ -1,5 +1,5 @@
 const { Builder, By, until, Key } = require('selenium-webdriver');
-const { recordTest, saveResults, clearResults, getResults } = require('./test-results-manager');
+const { recordTest, saveResults, clearResults, getResults } = require('../util/results-manager');
 
 const DASHBOARD_URL = process.env.DASHBOARD_URL || 'http://localhost:3000';
 const TEST_TIMEOUT = 30000;
