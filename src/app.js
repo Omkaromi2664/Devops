@@ -5,6 +5,7 @@ const jenkinsRoute = require('../routes/jenkins');
 const dockerRoute = require('../routes/docker');
 const kubernetesRoute = require('../routes/kubernetes');
 const nagiosRoute = require('../routes/nagios');
+const testsRoute = require('../routes/tests');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,5 +27,6 @@ app.use('/api/jenkins', jenkinsRoute.router);
 app.use('/api/docker', dockerRoute.router);
 app.use('/api/kubernetes', kubernetesRoute.router);
 app.use('/api/nagios', nagiosRoute.router);
+app.use('/api/tests', testsRoute.router);
 
 module.exports = { app, port };

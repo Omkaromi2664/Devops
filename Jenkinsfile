@@ -22,9 +22,15 @@ pipeline {
       }
     }
 
-    stage('Run Tests') {
+    stage('Run Unit Tests') {
       steps {
         sh 'npm test'
+      }
+    }
+
+    stage('Run Integration Tests') {
+      steps {
+        sh 'npm run test:integration'
       }
     }
 
@@ -35,6 +41,23 @@ pipeline {
             -t ${DOCKER_HUB_USER}/${IMAGE_NAME}:${BUILD_NUMBER} \
             -t ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest .
         '''
+      }
+    }
+
+    stage('Run Selenium Tests') {
+      when {
+        expression { 
+          return env.RUN_SELENIUM_TESTS == 'true' || 
+                 env.BRANCH_NAME == 'main' ||
+                 env.BUILD_NUMBER == '1'
+        }
+      }
+      steps {
+        script {
+          catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+            sh 'npm run test:selenium || true'
+          }
+        }
       }
     }
 
@@ -73,6 +96,14 @@ pipeline {
     }
     failure {
       echo "Build #${BUILD_NUMBER} failed. Check the stage logs above."
+    }
+    always {
+      archiveArtifacts artifacts: '.test-results/**', allowEmptyArchive: true
+      publishHTML([
+        reportDir: '.test-results',
+        reportFiles: 'latest.json',
+        reportName: 'Test Results'
+      ])
     }
   }
 }

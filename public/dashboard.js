@@ -4,6 +4,14 @@ const elements = {
   systemRam: document.getElementById('system-ram'),
   systemDisk: document.getElementById('system-disk'),
   systemUptime: document.getElementById('system-uptime'),
+  testsBadge: document.getElementById('tests-badge'),
+  testsTotal: document.getElementById('tests-total'),
+  testsRate: document.getElementById('tests-rate'),
+  testsPassed: document.getElementById('tests-passed'),
+  testsFailed: document.getElementById('tests-failed'),
+  testsLastrun: document.getElementById('tests-lastrun'),
+  testsDetails: document.getElementById('tests-details'),
+  testsRecent: document.getElementById('tests-recent'),
   jenkinsBadge: document.getElementById('jenkins-badge'),
   jenkinsList: document.getElementById('jenkins-list'),
   dockerBadge: document.getElementById('docker-badge'),
@@ -97,6 +105,62 @@ function updateSystem(system, updatedAt) {
 
   const label = updatedAt ? `Last updated: ${new Date(updatedAt).toLocaleTimeString()}` : 'Live';
   setBadge(elements.systemUpdated, 'neutral', label);
+}
+
+function updateTests(tests) {
+  if (!tests) {
+    setBadge(elements.testsBadge, 'neutral', 'No data');
+    if (elements.testsTotal) elements.testsTotal.textContent = '--';
+    if (elements.testsRate) elements.testsRate.textContent = '--';
+    if (elements.testsPassed) elements.testsPassed.textContent = '--';
+    if (elements.testsFailed) elements.testsFailed.textContent = '--';
+    return;
+  }
+
+  const totalTests = tests.totalTests || 0;
+  const passedTests = tests.passedTests || 0;
+  const failedTests = tests.failedTests || 0;
+  const passRate = tests.passRate || 0;
+  const lastRun = tests.lastRun;
+
+  // Update badge
+  let badgeLevel = 'neutral';
+  let badgeText = 'No runs';
+  if (totalTests > 0) {
+    badgeLevel = failedTests === 0 ? 'ok' : 'danger';
+    badgeText = failedTests === 0 ? 'Passing' : `${failedTests} Failed`;
+  }
+  setBadge(elements.testsBadge, badgeLevel, badgeText);
+
+  // Update metrics
+  if (elements.testsTotal) elements.testsTotal.textContent = totalTests || '--';
+  if (elements.testsRate) elements.testsRate.textContent = totalTests > 0 ? `${passRate}%` : '--';
+  if (elements.testsPassed) elements.testsPassed.textContent = passedTests || '--';
+  if (elements.testsFailed) elements.testsFailed.textContent = failedTests || '--';
+
+  // Update last run time
+  if (elements.testsLastrun) {
+    if (lastRun) {
+      const runDate = new Date(lastRun);
+      elements.testsLastrun.textContent = `Last run: ${runDate.toLocaleTimeString()}`;
+    } else {
+      elements.testsLastrun.textContent = 'Last run: Never';
+    }
+  }
+
+  // Show recent failed tests if any
+  if (elements.testsDetails && elements.testsRecent) {
+    const recentFailed = (tests.recentTests || [])
+      .filter(t => !t.passed)
+      .slice(0, 3);
+    
+    if (recentFailed.length > 0) {
+      elements.testsDetails.style.display = 'block';
+      elements.testsRecent.textContent = recentFailed.map(t => t.name).join(', ');
+    } else {
+      elements.testsDetails.style.display = 'none';
+    }
+  }
 }
 
 function updateJenkins(jenkins) {
@@ -355,6 +419,7 @@ function updateNagios(nagios) {
 function applyStatus(payload) {
   if (!payload) return;
   updateSystem(payload.system, payload.updatedAt);
+  updateTests(payload.tests);
   updateJenkins(payload.jenkins);
   updateDocker(payload.docker);
   updateK8s(payload.kubernetes);
