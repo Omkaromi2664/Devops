@@ -1,9 +1,143 @@
 {
-  "timestamp": 1777532550146,
-  "runDate": "2026-04-30T07:02:30.146Z",
-  "tests": [],
-  "totalTests": 0,
-  "passedTests": 0,
+  "timestamp": 1777540309707,
+  "runDate": "2026-04-30T09:12:06.226Z",
+  "tests": [
+    {
+      "name": "Dashboard page loads",
+      "passed": true,
+      "duration": 1752,
+      "timestamp": 1777540314638,
+      "error": null
+    },
+    {
+      "name": "Live indicator visible",
+      "passed": true,
+      "duration": 77,
+      "timestamp": 1777540314716,
+      "error": null
+    },
+    {
+      "name": "System Health panel",
+      "passed": true,
+      "duration": 131,
+      "timestamp": 1777540314852,
+      "error": null
+    },
+    {
+      "name": "Jenkins panel",
+      "passed": true,
+      "duration": 260,
+      "timestamp": 1777540315114,
+      "error": null
+    },
+    {
+      "name": "Docker panel",
+      "passed": true,
+      "duration": 59,
+      "timestamp": 1777540315175,
+      "error": null
+    },
+    {
+      "name": "Kubernetes panel",
+      "passed": true,
+      "duration": 127,
+      "timestamp": 1777540315312,
+      "error": null
+    },
+    {
+      "name": "Nagios panel",
+      "passed": true,
+      "duration": 265,
+      "timestamp": 1777540315600,
+      "error": null
+    },
+    {
+      "name": "Status badges display",
+      "passed": true,
+      "duration": 34,
+      "timestamp": 1777540315635,
+      "error": null
+    },
+    {
+      "name": "Status pills display",
+      "passed": true,
+      "duration": 46,
+      "timestamp": 1777540315688,
+      "error": null
+    },
+    {
+      "name": "Data table structure",
+      "passed": true,
+      "duration": 230,
+      "timestamp": 1777540315920,
+      "error": null
+    },
+    {
+      "name": "Footer exists",
+      "passed": true,
+      "duration": 55,
+      "timestamp": 1777540315977,
+      "error": null
+    },
+    {
+      "name": "Page auto-updates",
+      "passed": true,
+      "duration": 6192,
+      "timestamp": 1777540322172,
+      "error": null
+    },
+    {
+      "name": "Health endpoint",
+      "passed": true,
+      "duration": 225,
+      "timestamp": 1777540322400,
+      "error": null
+    },
+    {
+      "name": "Status API",
+      "passed": true,
+      "duration": 1719,
+      "timestamp": 1777540324121,
+      "error": null
+    },
+    {
+      "name": "System API",
+      "passed": true,
+      "duration": 121,
+      "timestamp": 1777540324243,
+      "error": null
+    },
+    {
+      "name": "Jenkins API",
+      "passed": true,
+      "duration": 26,
+      "timestamp": 1777540324273,
+      "error": null
+    },
+    {
+      "name": "Docker API",
+      "passed": true,
+      "duration": 1902,
+      "timestamp": 1777540326180,
+      "error": null
+    },
+    {
+      "name": "Kubernetes API",
+      "passed": true,
+      "duration": 30,
+      "timestamp": 1777540326212,
+      "error": null
+    },
+    {
+      "name": "Nagios API",
+      "passed": true,
+      "duration": 13,
+      "timestamp": 1777540326226,
+      "error": null
+    }
+  ],
+  "totalTests": 19,
+  "passedTests": 19,
   "failedTests": 0,
-  "lastRun": null
+  "lastRun": 1777540326226
 }
