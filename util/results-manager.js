@@ -4,6 +4,18 @@ const path = require('path');
 const RESULTS_DIR = path.join(__dirname, '..', '.test-results');
 const RESULTS_FILE = path.join(RESULTS_DIR, 'latest.json');
 
+function createEmptyResults() {
+  return {
+    timestamp: Date.now(),
+    runDate: new Date().toISOString(),
+    tests: [],
+    totalTests: 0,
+    passedTests: 0,
+    failedTests: 0,
+    lastRun: null
+  };
+}
+
 function ensureResultsDir() {
   if (!fs.existsSync(RESULTS_DIR)) {
     fs.mkdirSync(RESULTS_DIR, { recursive: true });
@@ -21,17 +33,25 @@ function saveResults(testResults) {
   return data;
 }
 
+function saveRunResults(tests) {
+  const normalizedTests = Array.isArray(tests) ? tests : [];
+  const passedTests = normalizedTests.filter((test) => test.passed).length;
+  const failedTests = normalizedTests.length - passedTests;
+
+  return saveResults({
+    tests: normalizedTests,
+    totalTests: normalizedTests.length,
+    passedTests,
+    failedTests,
+    lastRun: Date.now(),
+    ok: failedTests === 0,
+    passRate: normalizedTests.length > 0 ? Math.round((passedTests / normalizedTests.length) * 100) : 0
+  });
+}
+
 function getResults() {
   if (!fs.existsSync(RESULTS_FILE)) {
-    return {
-      ok: false,
-      message: 'No test results available',
-      tests: [],
-      totalTests: 0,
-      passedTests: 0,
-      failedTests: 0,
-      lastRun: null
-    };
+    return createEmptyResults();
   }
 
   const data = JSON.parse(fs.readFileSync(RESULTS_FILE, 'utf8'));
@@ -78,6 +98,7 @@ function clearResults() {
 
 module.exports = {
   saveResults,
+  saveRunResults,
   getResults,
   recordTest,
   clearResults,

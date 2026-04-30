@@ -262,7 +262,10 @@ async function runAllTests() {
   console.log(`Total Tests: ${testSummary.totalTests}`);
   console.log(`✓ Passed: ${testSummary.passedTests}`);
   console.log(`✗ Failed: ${testSummary.failedTests}`);
-  console.log(`Pass Rate: ${((testSummary.passedTests / testSummary.totalTests) * 100).toFixed(1)}%`);
+  const passRate = testSummary.totalTests > 0
+    ? ((testSummary.passedTests / testSummary.totalTests) * 100).toFixed(1)
+    : '0.0';
+  console.log(`Pass Rate: ${passRate}%`);
   console.log('='.repeat(50) + '\n');
 
   // Save results

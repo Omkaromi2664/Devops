@@ -1,15 +1,100 @@
-const { spawn } = require('child_process');
-const path = require('path');
-const { getResults } = require('./results-manager');
+const { saveRunResults, getResults } = require('./results-manager');
 
 class TestScheduler {
   constructor(options = {}) {
-    this.intervalMs = options.intervalMs || 5 * 60 * 1000; // 5 minutes default
+    this.intervalMs = options.intervalMs || 5 * 60 * 1000;
+    this.enabled = options.enabled !== false;
+    this.baseUrl = options.baseUrl || 'http://localhost:3000';
     this.isRunning = false;
-    this.currentRun = null;
     this.lastRunTime = null;
     this.runCount = 0;
-    this.enabled = options.enabled !== false;
+  }
+
+  async fetchJson(pathname, timeoutMs = 8000) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(new URL(pathname, this.baseUrl), {
+        signal: controller.signal
+      });
+
+      const body = await response.json().catch(() => ({}));
+      return {
+        ok: response.ok,
+        status: response.status,
+        body
+      };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async runCheck(name, pathname, validator) {
+    const startedAt = Date.now();
+
+    try {
+      const response = await this.fetchJson(pathname);
+      validator(response);
+
+      return {
+        name,
+        passed: true,
+        duration: Date.now() - startedAt,
+        timestamp: Date.now(),
+        error: null
+      };
+    } catch (error) {
+      return {
+        name,
+        passed: false,
+        duration: Date.now() - startedAt,
+        timestamp: Date.now(),
+        error: error.message
+      };
+    }
+  }
+
+  async runChecks() {
+    const checks = [
+      this.runCheck('Health endpoint', '/health', (response) => {
+        if (!response.ok || response.body.status !== 'ok') {
+          throw new Error('Health endpoint failed');
+        }
+      }),
+      this.runCheck('Status endpoint', '/api/status', (response) => {
+        if (!response.ok || !response.body.updatedAt) {
+          throw new Error('Status endpoint failed');
+        }
+      }),
+      this.runCheck('System API', '/api/system', (response) => {
+        if (!response.ok || response.body.ok === false) {
+          throw new Error('System API unavailable');
+        }
+      }),
+      this.runCheck('Jenkins API', '/api/jenkins', (response) => {
+        if (!('ok' in response.body)) {
+          throw new Error('Jenkins API missing ok field');
+        }
+      }),
+      this.runCheck('Docker API', '/api/docker', (response) => {
+        if (!('ok' in response.body)) {
+          throw new Error('Docker API missing ok field');
+        }
+      }),
+      this.runCheck('Kubernetes API', '/api/kubernetes', (response) => {
+        if (!('ok' in response.body)) {
+          throw new Error('Kubernetes API missing ok field');
+        }
+      }),
+      this.runCheck('Nagios API', '/api/nagios', (response) => {
+        if (!('ok' in response.body)) {
+          throw new Error('Nagios API missing ok field');
+        }
+      })
+    ];
+
+    return Promise.all(checks);
   }
 
   async runTests() {
@@ -20,58 +105,24 @@ class TestScheduler {
 
     this.isRunning = true;
     this.lastRunTime = Date.now();
-    this.runCount++;
+    this.runCount += 1;
 
     console.log(`[TestScheduler] Starting test run #${this.runCount} at ${new Date().toISOString()}`);
 
     try {
-      // Run integration tests (faster, more reliable in production)
-      await this.runIntegrationTests();
-      console.log('[TestScheduler] Test run completed successfully');
+      const results = await this.runChecks();
+      const saved = saveRunResults(results);
+
+      if (saved.failedTests === 0) {
+        console.log(`[TestScheduler] Test run completed successfully (${saved.totalTests} checks)`);
+      } else {
+        console.log(`[TestScheduler] Test run completed with ${saved.failedTests} failure(s)`);
+      }
     } catch (error) {
       console.error('[TestScheduler] Test run failed:', error.message);
     } finally {
       this.isRunning = false;
     }
-  }
-
-  runIntegrationTests() {
-    return new Promise((resolve, reject) => {
-      const testFile = path.join(__dirname, '..', 'test', 'integration.test.js');
-      const env = Object.assign({}, process.env, {
-        BASE_URL: process.env.BASE_URL || 'http://localhost:3000'
-      });
-
-      const proc = spawn('node', [testFile], {
-        env,
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      proc.stdout.on('data', (data) => {
-        stdout += data.toString();
-        process.stdout.write(`[TestScheduler] ${data}`);
-      });
-
-      proc.stderr.on('data', (data) => {
-        stderr += data.toString();
-        process.stderr.write(`[TestScheduler] ${data}`);
-      });
-
-      proc.on('close', (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`Tests exited with code ${code}`));
-        }
-      });
-
-      proc.on('error', (error) => {
-        reject(error);
-      });
-    });
   }
 
   start() {
@@ -81,13 +132,11 @@ class TestScheduler {
     }
 
     console.log(`[TestScheduler] Starting with interval of ${this.intervalMs}ms`);
-    
-    // Run tests immediately on startup
-    this.runTests().catch(err => console.error('[TestScheduler] Initial run failed:', err));
 
-    // Then schedule regular runs
+    this.runTests().catch((error) => console.error('[TestScheduler] Initial run failed:', error));
+
     this.intervalHandle = setInterval(() => {
-      this.runTests().catch(err => console.error('[TestScheduler] Scheduled run failed:', err));
+      this.runTests().catch((error) => console.error('[TestScheduler] Scheduled run failed:', error));
     }, this.intervalMs);
   }
 
@@ -101,6 +150,7 @@ class TestScheduler {
 
   getStatus() {
     const results = getResults();
+
     return {
       enabled: this.enabled,
       isRunning: this.isRunning,
@@ -111,9 +161,7 @@ class TestScheduler {
         totalTests: results.totalTests,
         passedTests: results.passedTests,
         failedTests: results.failedTests,
-        passRate: results.totalTests > 0 
-          ? Math.round((results.passedTests / results.totalTests) * 100) 
-          : 0,
+        passRate: results.totalTests > 0 ? Math.round((results.passedTests / results.totalTests) * 100) : 0,
         status: results.totalTests > 0 && results.failedTests === 0 ? 'passing' : 'failing'
       }
     };
